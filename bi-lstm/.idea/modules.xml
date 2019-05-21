@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/bi-lstm.iml" filepath="$PROJECT_DIR$/.idea/bi-lstm.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../cnn/cnn-text-classification-tf/.idea/cnn-text-classification-tf.iml" filepath="$PROJECT_DIR$/../cnn/cnn-text-classification-tf/.idea/cnn-text-classification-tf.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../nlp_ner/.idea/nlp_ner.iml" filepath="$PROJECT_DIR$/../nlp_ner/.idea/nlp_ner.iml" />
+    </modules>
+  </component>
+</project>
