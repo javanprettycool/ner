@@ -205,7 +205,7 @@ def pad_sequence(sequences, pad_tok, nlevel=1):
                                             max_length_word * [pad_tok], max_sentence_length)
         sequence_length, _ = _pad_sequences(sequence_length, 0, max_sentence_length)
 
-    return sequence_padded, sequence_padded
+    return sequence_padded, sequence_length
 
 
 def next_batch(data, batch_size):
@@ -284,7 +284,10 @@ def build_data(train_file, val_file, test_file, output_words, output_tags, outpu
     write_vocab(vocab_chars, output_chars)
 
     # output the processed train file
-    processing_word = get_processing_word(vocab_words, vocab_chars, lowercase=True, chars=use_chars)
+    vocab_words_dict = load_vocab(output_words)
+    vocab_chars_dict = load_vocab(output_chars)
+
+    processing_word = get_processing_word(vocab_words_dict, vocab_chars_dict, lowercase=True, chars=use_chars)
     train = CoNLLDataset(train_file, processing_word)
     val = CoNLLDataset(val_file, processing_word)
     test = CoNLLDataset(test_file, processing_word)
