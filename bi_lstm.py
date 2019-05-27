@@ -8,12 +8,16 @@ from data_utils import *
 
 class BiLSTMModel(object):
     def __init__(
-            self, vocab_size, num_tags, embedding_size, hidden_size, learning_rate=1e-3, idx_to_tag=None):
+            self, vocab_size, num_tags, embedding_size,
+            hidden_size, learning_rate=1e-3, processing_word=None, processing_tag=None, idx_to_tag=None):
 
         self.input_x = tf.placeholder(tf.int32, [None, None], name="input_x")
         self.input_y = tf.placeholder(tf.int32, [None, None], name="input_y")
-        self.dropout_keep_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")
-        self.sequence_lengths = tf.placeholder(tf.int32, [None], name="sequence_length")
+        self.dropout_keep_prob = tf.placeholder(tf.float32, shape=[], name="dropout_keep_prob")
+        self.sequence_lengths = tf.placeholder(tf.int32, shape=[None], name="sequence_length")
+        self.global_step = tf.Variable(0, name="global_step", trainable=False)
+        self.processing_word = processing_word
+        self.processing_tag = processing_tag
         self.idx_to_tag = idx_to_tag
 
         def lstm_cell():
@@ -51,13 +55,12 @@ class BiLSTMModel(object):
             self.loss = tf.reduce_mean(-log_likehood)
 
             optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
-            self.train_op = optimizer.minimize(self.loss)
+            self.train_op = optimizer.minimize(self.loss, global_step=self.global_step)
             #grads_and_vars = optimizer.compute_gradients(self.loss)
             #optimizer.apply_gradients(grads_and_vars, global_step=global_step)
 
     def predict_batch(self, words, sess):
         fd, sequence_lengths = self.get_feed_dict(words, dropout=1.)
-
         viterbi_sequences = []
         predictions, trans_params = sess.run(
             [self.predictions, self.transition_params], feed_dict=fd)
@@ -71,27 +74,29 @@ class BiLSTMModel(object):
         return viterbi_sequences, sequence_lengths
 
     def predict(self, words_raw, sess):
-        words = [get_processing_word(w) for w in words_raw]
+        words = [self.processing_word(w) for w in words_raw]
         if type(words[0]) == tuple:
             words = zip(*words)
 
         pred_ids, _ = self.predict_batch([words], sess)
+        print(pred_ids)
         preds = [self.idx_to_tag[idx] for idx in list(pred_ids[0])]
 
         return preds
 
     def get_feed_dict(self, words, labels=None, lr=None, dropout=None):
-        word_ids, sequence_length = pad_sequence(words, 0)
+        word_ids, sequence_lengths = pad_sequence(words, 0)
 
         feed = {
-            self.sequence_length: sequence_length,
+            self.sequence_lengths: sequence_lengths,
             self.input_x: word_ids,
         }
 
         if labels is not None:
+            labels, _ = pad_sequence(labels, 0)
             feed[self.input_y] = labels
 
         if dropout is not None:
             feed[self.dropout_keep_prob] = dropout
 
-        return feed, sequence_length
+        return feed, sequence_lengths

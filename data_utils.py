@@ -237,7 +237,7 @@ def get_chunk_type(tok, idx_to_tag):
 def get_chunks(seq, tags):
 
     default = tags[NONE]
-    idx_to_tag = {idx: tag for idx, tag in tags.items()}
+    idx_to_tag = {idx: tag for tag, idx in tags.items()}
     chunks = []
     chunk_type, chunk_start = None, None
     for i, tok in enumerate(seq):
@@ -264,7 +264,7 @@ def get_chunks(seq, tags):
     return chunks
 
 
-def build_data(train_file, val_file, test_file, output_words, output_tags, output_chars, use_chars=False):
+def build_data(train_file, val_file, test_file, output_words, output_tags, output_chars):
 
     # save raw vocab file
     processing_word = None
@@ -283,15 +283,20 @@ def build_data(train_file, val_file, test_file, output_words, output_tags, outpu
     vocab_chars = get_char_vocabs(train)
     write_vocab(vocab_chars, output_chars)
 
+    return True
+
+
+def load_data(train_file, val_file, test_file, output_words, output_tags, output_chars, use_chars=False):
     # output the processed train file
     vocab_words_dict = load_vocab(output_words)
     vocab_chars_dict = load_vocab(output_chars)
+    vocab_tags_dict = load_vocab(output_tags)
 
     processing_word = get_processing_word(vocab_words_dict, vocab_chars_dict, lowercase=True, chars=use_chars)
-    train = CoNLLDataset(train_file, processing_word)
-    val = CoNLLDataset(val_file, processing_word)
-    test = CoNLLDataset(test_file, processing_word)
+    processing_tag = get_processing_word(vocab_tags_dict, lowercase=False, allow_unk=False)
 
-    return train, val, test, vocab_words, vocab_tags
+    train = CoNLLDataset(train_file, processing_word, processing_tag)
+    val = CoNLLDataset(val_file, processing_word, processing_tag)
+    test = CoNLLDataset(test_file, processing_word, processing_tag)
 
-
+    return train, val, test, vocab_words_dict, vocab_tags_dict, processing_word, processing_tag
