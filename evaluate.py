@@ -42,7 +42,7 @@ def input_shell(model, sess):
 
 
 def main():
-    model_dir = "./runs/1558510358.504878/checkpoints/model"
+    model_dir = "./runs/1558927314.5551953/checkpoints/model"
 
     train_data, val_data, test_data, vocab_words, vocab_tags, processing_word, _ = load_data(
         FLAGS.train_file, FLAGS.val_file, FLAGS.test_file, FLAGS.words_file, FLAGS.tags_file, FLAGS.chars_file)
