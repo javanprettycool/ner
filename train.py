@@ -26,16 +26,19 @@ tf.flags.DEFINE_string("tags_file", "./data/tags.txt", "tags_file")
 tf.flags.DEFINE_string("chars_file", "./data/chars.txt", "chars_file")
 
 # Model Hyperparameters
-tf.flags.DEFINE_integer("embedding_size", 256, "Dimensionality of character embedding (default: 128)")
+tf.flags.DEFINE_integer("embedding_size", 300, "Dimensionality of character embedding (default: 128)")
 tf.flags.DEFINE_integer("hidden_size", 256, "Dimensionality of rnn hidden layer (default: 128)")
 tf.flags.DEFINE_float("dropout_keep_prob", 0.5, "Dropout keep probability (default: 0.5)")
 
 # Training parameters
 tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default: 64)")
-tf.flags.DEFINE_integer("num_epochs", 5, "Number of training epochs (default: 200)")
+tf.flags.DEFINE_integer("num_epochs", 10, "Number of training epochs (default: 200)")
 tf.flags.DEFINE_integer("evaluate_every", 10, "Evaluate model on dev set after this many steps (default: 100)")
 tf.flags.DEFINE_integer("checkpoint_every", 100, "Save model after this many steps (default: 100)")
 tf.flags.DEFINE_integer("num_checkpoints", 5, "Number of checkpoints to store (default: 5)")
+tf.flags.DEFINE_float("learning_rate", 1e-3, "learning_rate (default: 1e-3)")
+tf.flags.DEFINE_float("learning_rate_decay", 0.9, "learning_rate_decay (default: 1e-3)")
+
 
 # Misc Parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
@@ -70,12 +73,12 @@ def train(train_data, val_data, vocab_words, vocab_tags):
             train_summary = tf.summary.merge_all()
             summary_file_writer = tf.summary.FileWriter(FLAGS.out_dir, sess.graph)
 
-            def train_step(train_data, val_data, epoch):
+            def train_step(train_data, val_data, epoch, lr):
                 batch_size = FLAGS.batch_size
                 n_batch = (len(train_data) + batch_size - 1) // batch_size
                 for i, (x_batch, y_batch) in enumerate(next_batch(train_data, batch_size)):
 
-                    fd, _ = bi_lstm.get_feed_dict(x_batch, y_batch, dropout=FLAGS.dropout_keep_prob)
+                    fd, _ = bi_lstm.get_feed_dict(x_batch, y_batch, lr=lr, dropout=FLAGS.dropout_keep_prob)
 
                     _, loss, summary = sess.run(
                         [bi_lstm.train_op, bi_lstm.loss, train_summary], feed_dict=fd)
@@ -120,8 +123,10 @@ def train(train_data, val_data, vocab_words, vocab_tags):
 
             best_score = 0
             no_imprv_epoch = 0
+            lr = FLAGS.learning_rate
             for epoch in range(FLAGS.num_epochs):
-                score = train_step(train_data, val_data, epoch)
+                score = train_step(train_data, val_data, epoch, lr)
+                lr *= FLAGS.learning_rate_decay
 
                 if score >= best_score:
                     no_imprv_epoch = 0

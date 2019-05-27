@@ -15,6 +15,7 @@ class BiLSTMModel(object):
         self.input_y = tf.placeholder(tf.int32, [None, None], name="input_y")
         self.dropout_keep_prob = tf.placeholder(tf.float32, shape=[], name="dropout_keep_prob")
         self.sequence_lengths = tf.placeholder(tf.int32, shape=[None], name="sequence_length")
+        self.learning_rate = tf.placeholder(tf.float32, shape=[], name="learning_rate")
         self.global_step = tf.Variable(0, name="global_step", trainable=False)
         self.processing_word = processing_word
         self.processing_tag = processing_tag
@@ -98,5 +99,8 @@ class BiLSTMModel(object):
 
         if dropout is not None:
             feed[self.dropout_keep_prob] = dropout
+
+        if lr is not None:
+            feed[self.learning_rate] = lr
 
         return feed, sequence_lengths
