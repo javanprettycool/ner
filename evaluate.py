@@ -10,6 +10,7 @@ def align_data(data):
     spacings = [max([len(seq[i]) for seq in data.values()])
                 for i in range(len(data[list(data.keys())[0]]))]
 
+    named_entities = dict()
     data_aligned = dict()
     for key, seq in data.items():
         str_aligned = ""
@@ -18,7 +19,32 @@ def align_data(data):
 
         data_aligned[key] = str_aligned
 
-    return data_aligned
+    words = data[list(data.keys())[0]]
+    preds = data[list(data.keys())[1]]
+    start_idx = 0
+    start_flag = False
+    for i, p in enumerate(preds):
+        #print(p, p.startswith("B-"))
+        if p.startswith('B-') and not start_flag:
+            start_flag = True
+            start_idx = i
+        elif p == 'O' and start_flag:
+            start_flag = False
+            word = "".join(words[start_idx:i])
+            named_entities[word] = preds[start_idx][2:]
+            start_idx = i
+        elif p.startswith('B-') and start_flag:
+            start_flag = True
+            word = "".join(words[start_idx:i])
+            named_entities[word] = preds[start_idx][2:]
+            start_idx = i
+
+
+    if start_flag:
+        word = "".join(words[start_idx: len(preds)])
+        named_entities[word] = preds[start_idx][2:]
+
+    return data_aligned, named_entities
 
 
 def input_shell(model, sess):
@@ -28,20 +54,28 @@ def input_shell(model, sess):
         except NameError:
             sentence = input("input >>")
 
-        words_raw = sentence.strip().split(" ")
+        words_raw = list(sentence.strip().replace(" ", ""))
 
         if words_raw == ["exit"]:
             break
         print(words_raw)
         preds = model.predict(words_raw, sess)
 
-        to_print = align_data({"input": words_raw, "output": preds})
+        to_print, named_entities = align_data({"input": words_raw, "output": preds})
 
         for key, seq in to_print.items():
             print(seq)
 
+        print(named_entities)
 
 def main():
+    # words_raw = ['我', '来', '自', '广', '东', '梅', '州']
+    # preds = ['O', 'O', 'O', 'B-LOC', 'I-LOC', 'I-LOC', 'I-LOC']
+    # to_print, named_entities = align_data({"input": words_raw, "output": preds})
+    # print(to_print, named_entities)
+    # exit()
+
+
     model_dir = "./runs/1558927314.5551953/checkpoints/model"
 
     train_data, val_data, test_data, vocab_words, vocab_tags, processing_word, _ = load_data(
